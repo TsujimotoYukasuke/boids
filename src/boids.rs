@@ -6,16 +6,6 @@ const NUM_BOIDS: u32 = 1000;
 const WORLD_BOUNDS: f32 = 100.0;
 const VISION_RADIUS: f32 = 20.0;
 
-/*
-#[derive(Component, Default)]
-struct Boid {
-    movement_direction: Vec3,
-    separation_force: Vec3,
-    alignment_force: Vec3,
-    cohesion_force: Vec3,
-    world_force: Vec3,
-}*/
-
 #[derive(Component, Default)]
 struct SeparationForce(Vec3);
 
@@ -88,39 +78,9 @@ fn spawn_boids(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn calculate_separation_force(
-    //pool: Res<ComputeTaskPool>,
     boid_query: Query<(&Transform, &Boid)>,
     mut separation_force_query: Query<(Entity, &mut SeparationForce)>,
 ) {
-    /*
-    separation_force_query.par_for_each_mut(
-        &pool,
-        (NUM_BOIDS / 10) as usize,
-        |(entity, mut separation_force)| {
-            let (this_transform, this_boid) = boid_query.get(entity).unwrap();
-            let this_translation = this_transform.translation;
-
-            let relative_locations: Vec<Vec3> = boid_query
-                .iter()
-                .map(|(transform, _)| transform.translation - this_translation)
-                .filter(|translation| {
-                    let distance = translation.distance_squared(this_translation);
-                    let dot = Vec3::dot(this_boid.movement_direction, translation.normalize());
-
-                    distance > f32::EPSILON.powi(2)
-                        && distance <= VISION_RADIUS.powi(2)
-                        && dot > 0.0
-                })
-                .collect();
-
-            separation_force.0 = Vec3::ZERO;
-            for location in relative_locations {
-                let force_magnitude = VISION_RADIUS / 10.0 / location.distance(this_translation);
-                separation_force.0 += (this_translation - location).normalize() * force_magnitude;
-            }
-        },
-    );*/
-
     for (entity, mut separation_force) in separation_force_query.iter_mut() {
         let (this_transform, this_boid) = boid_query.get(entity).unwrap();
         let this_translation = this_transform.translation;
