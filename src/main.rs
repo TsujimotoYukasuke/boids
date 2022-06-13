@@ -19,6 +19,8 @@ struct CameraOrientation {
     pitch: f32,
 }
 
+
+// NOTE: Interestingly, when we decide to just allow all the different forces to have equal weight, our boids try incredibly hard to merge into one another.
 fn main() {
     App::new()
         .insert_resource(CameraOrientation::default())

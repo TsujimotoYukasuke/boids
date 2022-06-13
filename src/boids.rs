@@ -39,8 +39,8 @@ impl Plugin for BoidsPlugin {
             .add_system(calculate_separation_force.before("boid_movement"))
             .add_system(calculate_alignment_force.before("boid_movement"))
             .add_system(calculate_cohesion_force.before("boid_movement"))
-            .add_system(calculate_world_force.before("boid_movement"))
-            .add_system(move_boid.label("boid_movement"));
+            .add_system(move_boids.label("boid_movement"))
+            .add_system(wrap_boids.after("boid_movement"));
     }
 }
 
@@ -91,6 +91,30 @@ fn spawn_boids(
         .push_children(&boids);
 }
 
+fn wrap_boids(mut transform_query: Query<&mut Transform, With<Boid>>) {
+    for mut transform in transform_query.iter_mut() {
+        let translation = &mut transform.translation;
+        if translation.x > WORLD_BOUNDS {
+            translation.x = -WORLD_BOUNDS;
+        }
+        if translation.x < -WORLD_BOUNDS {
+            translation.x = WORLD_BOUNDS;
+        }
+        if translation.y > WORLD_BOUNDS {
+            translation.y = -WORLD_BOUNDS;
+        }
+        if translation.y < -WORLD_BOUNDS {
+            translation.y = WORLD_BOUNDS;
+        }
+        if translation.z > WORLD_BOUNDS {
+            translation.z = -WORLD_BOUNDS;
+        }
+        if translation.z < -WORLD_BOUNDS {
+            translation.z = WORLD_BOUNDS;
+        }
+    }
+}
+
 fn calculate_separation_force(
     boid_query: Query<(&Transform, &Boid)>,
     mut separation_force_query: Query<(Entity, &mut SeparationForce)>,
@@ -102,18 +126,18 @@ fn calculate_separation_force(
         let relative_locations: Vec<Vec3> = boid_query
             .iter()
             .map(|(transform, _)| transform.translation - this_translation)
-            .filter(|translation| {
+            /*.filter(|translation| {
                 let distance = translation.distance_squared(this_translation);
                 let dot = Vec3::dot(this_boid.movement_direction, translation.normalize());
 
-                distance > f32::EPSILON.powi(2) && distance <= VISION_RADIUS.powi(2) && dot > 0.0
-            })
+                distance > 0.01 && distance <= VISION_RADIUS * VISION_RADIUS && dot > 0.0
+            })*/
             .collect();
 
         separation_force.0 = Vec3::ZERO;
-        for location in relative_locations {
-            let force_magnitude = VISION_RADIUS / 10.0 / location.distance(this_translation);
-            separation_force.0 += (this_translation - location).normalize() * force_magnitude;
+        for other_location in relative_locations { 
+            let force_magnitude = VISION_RADIUS / 10.0 / other_location.distance_squared(this_translation);
+            separation_force.0 += (this_translation - other_location).normalize() * force_magnitude;
         }
     }
 }
@@ -134,12 +158,13 @@ fn calculate_alignment_force(
                     boid.movement_direction,
                 )
             })
+            /*
             .filter(|(translation, _)| {
                 let distance = translation.distance_squared(this_translation);
                 let dot = Vec3::dot(this_boid.movement_direction, translation.normalize());
 
                 distance > f32::EPSILON.powi(2) && distance <= VISION_RADIUS.powi(2) && dot > 0.0
-            })
+            })*/
             .map(|(_, movement_direction)| movement_direction)
             .collect();
 
@@ -161,43 +186,35 @@ fn calculate_cohesion_force(
         cohesion_force.0 = boid_query
             .iter()
             .map(|(transform, _)| transform.translation - this_translation)
-            .filter(|translation| this_boid.movement_direction.dot(translation.normalize()) > 0.0)
+            //.filter(|translation| this_boid.movement_direction.dot(translation.normalize()) > 0.0)
             .reduce(|acc, value| acc + value)
             .unwrap_or(Vec3::ZERO)
             / (NUM_BOIDS - 1) as f32;
     }
 }
 
-fn calculate_world_force(mut boid_query: Query<(&Transform, &mut WorldForce), With<Boid>>) {
-    for (transform, mut world_force) in boid_query.iter_mut() {
-        world_force.0 = match transform.translation.length() >= WORLD_BOUNDS / 2.0 {
-            true => Vec3::ZERO - transform.translation * transform.translation.length() / 2.0,
-            false => Vec3::ZERO,
-        }
-    }
-}
-
-fn move_boid(
+fn move_boids(
     mut boid_query: Query<(
         &mut Transform,
         &mut Boid,
         &SeparationForce,
         &AlignmentForce,
         &CohesionForce,
-        &WorldForce,
     )>,
     time: Res<Time>,
 ) {
-    for (mut transform, mut boid, separation_force, alignment_force, cohesion_force, world_force) in
+    for (mut transform, mut boid, separation_force, alignment_force, cohesion_force) in
         boid_query.iter_mut()
     {
-        let collective_forces =
-            separation_force.0 + alignment_force.0 + cohesion_force.0 + world_force.0;
+        /*let collective_forces =
+            separation_force.0 + alignment_force.0 + cohesion_force.0;
 
         boid.movement_direction = match collective_forces.length() > f32::EPSILON {
-            true => collective_forces.normalize(),
-            false => Vec3::new(rand::random(), rand::random(), rand::random()).normalize(),
-        };
+            true => collective_forces,
+            false => Vec3::new(1.0, 0.0, 0.0), //Vec3::new(rand::random(), rand::random(), rand::random()).normalize(),
+        };*/
+
+        boid.movement_direction = Vec3::splat(1.0);
 
         let new_right_vector = Vec3::cross(Vec3::Y, boid.movement_direction);
         let angle = Vec3::angle_between(boid.movement_direction, Vec3::Y);
