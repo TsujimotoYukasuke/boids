@@ -47,7 +47,7 @@ fn main() {
 fn spawn_camera(mut commands: Commands) {
     commands
         .spawn_bundle(PerspectiveCameraBundle {
-            transform: Transform::from_xyz(0.0, 0.0, 400.0).looking_at(Vec3::Z, Vec3::Y),
+            transform: Transform::from_xyz(0.0, 0.0, 10.0).looking_at(Vec3::Z, Vec3::Y),
             ..Default::default()
         })
         .insert(Name::new("Player Camera"));
