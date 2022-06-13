@@ -35,6 +35,7 @@ fn main() {
         .add_plugin(BoidsPlugin)
         .add_plugin(DebugPlugin)
         .add_startup_system(spawn_camera)
+        .add_startup_system(spawn_light)
         .add_system(capture_cursor)
         .add_system(move_camera)
         .add_system(rotate_camera)
@@ -48,6 +49,10 @@ fn spawn_camera(mut commands: Commands) {
             ..Default::default()
         })
         .insert(Name::new("Player Camera"));
+}
+
+fn spawn_light(mut commands: Commands) {
+    commands.spawn_bundle(DirectionalLightBundle::default()).insert(Name::new("Sun Light"));
 }
 
 fn capture_cursor(

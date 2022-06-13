@@ -62,7 +62,7 @@ fn spawn_boids(mut commands: Commands, asset_server: Res<AssetServer>, mut mater
             .insert_bundle(PbrBundle {
                 mesh: mesh.clone(),
                 material: materials.add(StandardMaterial {
-                    base_color: Color::rgb(rng.gen_range(-0.5..=1.0), rng.gen_range(-0.5..=1.0), rng.gen_range(-0.5..=1.0)),
+                    base_color: Color::hsl(rng.gen_range(0.0..=255.0), rng.gen_range(0.6..1.0), 0.7),
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -70,9 +70,6 @@ fn spawn_boids(mut commands: Commands, asset_server: Res<AssetServer>, mut mater
             .insert(random_transform)
             .insert(GlobalTransform::default())
             .insert(Name::new("Boid"))
-            /*.with_children(|parent| {
-                parent.spawn_scene(scene.clone());
-            })*/
             .id();
 
         boids.push(boid);
