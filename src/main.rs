@@ -52,7 +52,9 @@ fn spawn_camera(mut commands: Commands) {
 }
 
 fn spawn_light(mut commands: Commands) {
-    commands.spawn_bundle(DirectionalLightBundle::default()).insert(Name::new("Sun Light"));
+    commands
+        .spawn_bundle(DirectionalLightBundle::default())
+        .insert(Name::new("Sun Light"));
 }
 
 fn capture_cursor(

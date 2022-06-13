@@ -1,5 +1,3 @@
-use std::f32::consts::PI;
-
 use bevy::prelude::*;
 use rand::{thread_rng, Rng};
 
@@ -46,7 +44,11 @@ impl Plugin for BoidsPlugin {
     }
 }
 
-fn spawn_boids(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: ResMut<Assets<StandardMaterial>>) {
+fn spawn_boids(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
     //let scene = asset_server.load("boid.gltf#Scene0");
     let mesh = asset_server.load("boid.gltf#Mesh0/Primitive0");
     let mut boids = Vec::new();
@@ -64,7 +66,11 @@ fn spawn_boids(mut commands: Commands, asset_server: Res<AssetServer>, mut mater
             .insert_bundle(PbrBundle {
                 mesh: mesh.clone(),
                 material: materials.add(StandardMaterial {
-                    base_color: Color::hsl(rng.gen_range(0.0..=255.0), rng.gen_range(0.6..1.0), 0.7),
+                    base_color: Color::hsl(
+                        rng.gen_range(0.0..=255.0),
+                        rng.gen_range(0.6..1.0),
+                        0.7,
+                    ),
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -165,7 +171,8 @@ fn calculate_cohesion_force(
 fn calculate_world_force(mut boid_query: Query<(&Transform, &mut WorldForce), With<Boid>>) {
     for (transform, mut world_force) in boid_query.iter_mut() {
         if transform.translation.length() >= WORLD_BOUNDS / 2.0 {
-            world_force.0 = Vec3::ZERO - transform.translation * transform.translation.length() / 2.0;
+            world_force.0 =
+                Vec3::ZERO - transform.translation * transform.translation.length() / 2.0;
         }
     }
 }
