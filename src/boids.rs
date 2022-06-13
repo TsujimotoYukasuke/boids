@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use bevy::prelude::*;
 use rand::{thread_rng, Rng};
 
@@ -185,10 +187,10 @@ fn move_boid(
         boid.movement_direction =
             (separation_force.0 + alignment_force.0 + cohesion_force.0 + world_force.0).normalize();
 
-        let cross = Vec3::cross(boid.movement_direction, Vec3::Y);
-        let w = f32::sqrt(boid.movement_direction.length().powi(2) * Vec3::Y.length().powi(2) + Vec3::dot(boid.movement_direction, Vec3::Y));
+        let new_right_vector = Vec3::cross(Vec3::Y, boid.movement_direction);
+        let angle = Vec3::angle_between(boid.movement_direction, Vec3::Y);
 
         transform.translation += boid.movement_direction * time.delta_seconds() * MOVEMENT_SPEED;
-        transform.rotation = Quat::from_xyzw(cross.x, cross.y, cross.z, w).normalize();
+        transform.rotation = Quat::from_axis_angle(new_right_vector, angle);
     }
 }
