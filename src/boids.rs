@@ -170,9 +170,9 @@ fn calculate_cohesion_force(
 
 fn calculate_world_force(mut boid_query: Query<(&Transform, &mut WorldForce), With<Boid>>) {
     for (transform, mut world_force) in boid_query.iter_mut() {
-        if transform.translation.length() >= WORLD_BOUNDS / 2.0 {
-            world_force.0 =
-                Vec3::ZERO - transform.translation * transform.translation.length() / 2.0;
+        world_force.0 = match transform.translation.length() >= WORLD_BOUNDS / 2.0 {
+            true => Vec3::ZERO - transform.translation * transform.translation.length() / 2.0,
+            false => Vec3::ZERO,
         }
     }
 }
@@ -191,8 +191,13 @@ fn move_boid(
     for (mut transform, mut boid, separation_force, alignment_force, cohesion_force, world_force) in
         boid_query.iter_mut()
     {
-        boid.movement_direction =
-            (separation_force.0 + alignment_force.0 + cohesion_force.0 + world_force.0).normalize();
+        let collective_forces =
+            separation_force.0 + alignment_force.0 + cohesion_force.0 + world_force.0;
+
+        boid.movement_direction = match collective_forces.length() > f32::EPSILON {
+            true => collective_forces.normalize(),
+            false => Vec3::new(rand::random(), rand::random(), rand::random()).normalize(),
+        };
 
         let new_right_vector = Vec3::cross(Vec3::Y, boid.movement_direction);
         let angle = Vec3::angle_between(boid.movement_direction, Vec3::Y);
