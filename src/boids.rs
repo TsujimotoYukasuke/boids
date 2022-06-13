@@ -44,8 +44,9 @@ impl Plugin for BoidsPlugin {
     }
 }
 
-fn spawn_boids(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let scene = asset_server.load("boid.gltf#Scene0");
+fn spawn_boids(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: ResMut<Assets<StandardMaterial>>) {
+    //let scene = asset_server.load("boid.gltf#Scene0");
+    let mesh = asset_server.load("boid.gltf#Mesh0/Primitive0");
     let mut boids = Vec::new();
 
     for _ in 0..NUM_BOIDS {
@@ -58,12 +59,20 @@ fn spawn_boids(mut commands: Commands, asset_server: Res<AssetServer>) {
 
         let boid = commands
             .spawn_bundle(BoidBundle::default())
+            .insert_bundle(PbrBundle {
+                mesh: mesh.clone(),
+                material: materials.add(StandardMaterial {
+                    base_color: Color::rgb(rng.gen_range(-0.5..=1.0), rng.gen_range(-0.5..=1.0), rng.gen_range(-0.5..=1.0)),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            })
             .insert(random_transform)
             .insert(GlobalTransform::default())
             .insert(Name::new("Boid"))
-            .with_children(|parent| {
+            /*.with_children(|parent| {
                 parent.spawn_scene(scene.clone());
-            })
+            })*/
             .id();
 
         boids.push(boid);
