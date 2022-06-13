@@ -9,7 +9,8 @@ use debug::DebugPlugin;
 
 const CAMERA_SENSITIVITY: f32 = 0.1;
 const CLEAR_COLOR: Color = Color::rgb(0.0, 0.05, 0.1);
-const MOVEMENT_SPEED: f32 = 5.0;
+const FAST_MOVEMENT_SPEED: f32 = 50.0;
+const MOVEMENT_SPEED: f32 = 20.0;
 const WINDOW_WIDTH: f32 = 1600.0;
 const WINDOW_HEIGHT: f32 = 900.0;
 
@@ -83,27 +84,28 @@ fn move_camera(
     time: Res<Time>,
 ) {
     let mut camera_transform = camera_query.get_single_mut().unwrap();
+    let fast_movement = keyboard_input.pressed(KeyCode::LShift);
 
     let mut horizontal_input = Vec2::new(0.0, 0.0);
     if keyboard_input.pressed(KeyCode::W) {
-        horizontal_input.y += MOVEMENT_SPEED * time.delta_seconds();
+        horizontal_input.y += match fast_movement { true => FAST_MOVEMENT_SPEED, false => MOVEMENT_SPEED } * time.delta_seconds();
     }
     if keyboard_input.pressed(KeyCode::S) {
-        horizontal_input.y -= MOVEMENT_SPEED * time.delta_seconds();
+        horizontal_input.y -= match fast_movement { true => FAST_MOVEMENT_SPEED, false => MOVEMENT_SPEED } * time.delta_seconds();
     }
     if keyboard_input.pressed(KeyCode::A) {
-        horizontal_input.x -= MOVEMENT_SPEED * time.delta_seconds();
+        horizontal_input.x -= match fast_movement { true => FAST_MOVEMENT_SPEED, false => MOVEMENT_SPEED } * time.delta_seconds();
     }
     if keyboard_input.pressed(KeyCode::D) {
-        horizontal_input.x += MOVEMENT_SPEED * time.delta_seconds();
+        horizontal_input.x += match fast_movement { true => FAST_MOVEMENT_SPEED, false => MOVEMENT_SPEED } * time.delta_seconds();
     }
 
     let mut vertical_input = 0.0;
     if keyboard_input.pressed(KeyCode::E) {
-        vertical_input += MOVEMENT_SPEED * time.delta_seconds();
+        vertical_input += match fast_movement { true => FAST_MOVEMENT_SPEED, false => MOVEMENT_SPEED } * time.delta_seconds();
     }
     if keyboard_input.pressed(KeyCode::Q) {
-        vertical_input -= MOVEMENT_SPEED * time.delta_seconds();
+        vertical_input -= match fast_movement { true => FAST_MOVEMENT_SPEED, false => MOVEMENT_SPEED } * time.delta_seconds();
     }
 
     let forward_movement = camera_transform.forward() * horizontal_input.y;
