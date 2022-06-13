@@ -20,7 +20,6 @@ struct CameraOrientation {
     pitch: f32,
 }
 
-
 // NOTE: Interestingly, when we decide to just allow all the different forces to have equal weight, our boids try incredibly hard to merge into one another.
 fn main() {
     App::new()
@@ -48,7 +47,7 @@ fn main() {
 fn spawn_camera(mut commands: Commands) {
     commands
         .spawn_bundle(PerspectiveCameraBundle {
-            transform: Transform::from_xyz(0.0, 0.0, 10.0).looking_at(Vec3::Z, Vec3::Y),
+            transform: Transform::from_xyz(0.0, 0.0, 400.0).looking_at(Vec3::Z, Vec3::Y),
             ..Default::default()
         })
         .insert(Name::new("Player Camera"));
@@ -88,24 +87,42 @@ fn move_camera(
 
     let mut horizontal_input = Vec2::new(0.0, 0.0);
     if keyboard_input.pressed(KeyCode::W) {
-        horizontal_input.y += match fast_movement { true => FAST_MOVEMENT_SPEED, false => MOVEMENT_SPEED } * time.delta_seconds();
+        horizontal_input.y += match fast_movement {
+            true => FAST_MOVEMENT_SPEED,
+            false => MOVEMENT_SPEED,
+        } * time.delta_seconds();
     }
     if keyboard_input.pressed(KeyCode::S) {
-        horizontal_input.y -= match fast_movement { true => FAST_MOVEMENT_SPEED, false => MOVEMENT_SPEED } * time.delta_seconds();
+        horizontal_input.y -= match fast_movement {
+            true => FAST_MOVEMENT_SPEED,
+            false => MOVEMENT_SPEED,
+        } * time.delta_seconds();
     }
     if keyboard_input.pressed(KeyCode::A) {
-        horizontal_input.x -= match fast_movement { true => FAST_MOVEMENT_SPEED, false => MOVEMENT_SPEED } * time.delta_seconds();
+        horizontal_input.x -= match fast_movement {
+            true => FAST_MOVEMENT_SPEED,
+            false => MOVEMENT_SPEED,
+        } * time.delta_seconds();
     }
     if keyboard_input.pressed(KeyCode::D) {
-        horizontal_input.x += match fast_movement { true => FAST_MOVEMENT_SPEED, false => MOVEMENT_SPEED } * time.delta_seconds();
+        horizontal_input.x += match fast_movement {
+            true => FAST_MOVEMENT_SPEED,
+            false => MOVEMENT_SPEED,
+        } * time.delta_seconds();
     }
 
     let mut vertical_input = 0.0;
     if keyboard_input.pressed(KeyCode::E) {
-        vertical_input += match fast_movement { true => FAST_MOVEMENT_SPEED, false => MOVEMENT_SPEED } * time.delta_seconds();
+        vertical_input += match fast_movement {
+            true => FAST_MOVEMENT_SPEED,
+            false => MOVEMENT_SPEED,
+        } * time.delta_seconds();
     }
     if keyboard_input.pressed(KeyCode::Q) {
-        vertical_input -= match fast_movement { true => FAST_MOVEMENT_SPEED, false => MOVEMENT_SPEED } * time.delta_seconds();
+        vertical_input -= match fast_movement {
+            true => FAST_MOVEMENT_SPEED,
+            false => MOVEMENT_SPEED,
+        } * time.delta_seconds();
     }
 
     let forward_movement = camera_transform.forward() * horizontal_input.y;
