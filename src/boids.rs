@@ -126,7 +126,10 @@ fn wrap_boids(mut transform_query: Query<&mut Transform, With<Boid>>) {
     }
 }
 
-fn calculate_separation_force(pool: Res<ComputeTaskPool>, mut boid_query: Query<(&Transform, &mut SeparationForce)>) {
+fn calculate_separation_force(
+    pool: Res<ComputeTaskPool>,
+    mut boid_query: Query<(&Transform, &mut SeparationForce)>,
+) {
     let other_translations: Vec<Vec3> = boid_query
         .iter()
         .map(|(transform, _)| transform.translation)
@@ -135,6 +138,13 @@ fn calculate_separation_force(pool: Res<ComputeTaskPool>, mut boid_query: Query<
     boid_query.par_for_each_mut(&pool, BATCH_SIZE, |(transform, mut separation_force)| {
         separation_force.0 = other_translations
             .iter()
+            .filter(|translation| {
+                transform
+                    .translation
+                    .normalize()
+                    .dot(translation.normalize())
+                    > -0.2
+            })
             .fold(Vec3::ZERO, |acc, translation| {
                 let direction = transform.translation - *translation;
 
@@ -162,7 +172,10 @@ fn calculate_separation_force(pool: Res<ComputeTaskPool>, mut boid_query: Query<
     }*/
 }
 
-fn calculate_alignment_force(pool: Res<ComputeTaskPool>, mut boid_query: Query<(&Transform, &mut AlignmentForce, &Boid)>) {
+fn calculate_alignment_force(
+    pool: Res<ComputeTaskPool>,
+    mut boid_query: Query<(&Transform, &mut AlignmentForce, &Boid)>,
+) {
     let other_translations_directions: Vec<(Vec3, Vec3)> = boid_query
         .iter()
         .map(|(transform, _, boid)| (transform.translation, boid.movement_direction))
@@ -171,10 +184,17 @@ fn calculate_alignment_force(pool: Res<ComputeTaskPool>, mut boid_query: Query<(
     boid_query.par_for_each_mut(&pool, BATCH_SIZE, |(transform, mut alignment_force, _)| {
         alignment_force.0 = other_translations_directions
             .iter()
-            .filter(|(translation, _)| translation.distance_squared(transform.translation) < VISION_RADIUS * VISION_RADIUS)
+            .filter(|(translation, _)| {
+                translation.distance_squared(transform.translation) < VISION_RADIUS * VISION_RADIUS
+                    && transform
+                        .translation
+                        .normalize()
+                        .dot(translation.normalize())
+                        > -0.2
+            })
             .fold(Vec3::ZERO, |acc, (_, direction)| acc + *direction)
             .try_normalize()
-            .unwrap_or_else(||Vec3::splat(1.0));
+            .unwrap_or_else(|| Vec3::splat(1.0));
     });
 
     /*
@@ -188,7 +208,10 @@ fn calculate_alignment_force(pool: Res<ComputeTaskPool>, mut boid_query: Query<(
     }*/
 }
 
-fn calculate_cohesion_force(pool: Res<ComputeTaskPool>, mut boid_query: Query<(&Transform, &mut CohesionForce)>) {
+fn calculate_cohesion_force(
+    pool: Res<ComputeTaskPool>,
+    mut boid_query: Query<(&Transform, &mut CohesionForce)>,
+) {
     let other_translations: Vec<Vec3> = boid_query
         .iter()
         .map(|(transform, _)| transform.translation)
@@ -197,6 +220,13 @@ fn calculate_cohesion_force(pool: Res<ComputeTaskPool>, mut boid_query: Query<(&
     boid_query.par_for_each_mut(&pool, BATCH_SIZE, |(transform, mut cohesion_force)| {
         cohesion_force.0 = other_translations
             .iter()
+            .filter(|translation| {
+                transform
+                    .translation
+                    .normalize()
+                    .dot(translation.normalize())
+                    > -0.2
+            })
             .fold(Vec3::ZERO, |acc, translation| {
                 let direction = *translation - transform.translation;
 
@@ -231,8 +261,7 @@ fn move_boids(
     for (mut transform, mut boid, separation_force, alignment_force, cohesion_force) in
         boid_query.iter_mut()
     {
-        boid.movement_direction =
-            separation_force.0 + alignment_force.0 + cohesion_force.0;
+        boid.movement_direction = separation_force.0 + alignment_force.0 + cohesion_force.0;
 
         let new_right_vector = Vec3::cross(Vec3::Y, boid.movement_direction);
         let angle = Vec3::angle_between(boid.movement_direction, Vec3::Y);
