@@ -98,7 +98,7 @@ impl Default for Boid {
             .normalize(),
 
             movement_speed: rng.gen_range(10.0..=20.0),
-            vision_dot: -0.6 + rng.gen_range(-0.2..=0.2),
+            vision_dot: -0.3 + rng.gen_range(-0.2..=0.2),
             vision_distance: rng.gen_range(10.0..30.0),
         }
     }
@@ -246,8 +246,7 @@ fn calculate_separation_force(
 
                     return_val
                 })
-                .normalize()
-                * separation_force.magnitude;
+                .normalize();
 
             separation_force.direction = match new_direction.is_nan() {
                 true => separation_force.direction,
@@ -270,32 +269,28 @@ fn calculate_alignment_force(
         &pool,
         BATCH_SIZE,
         |(transform, mut alignment_force, boid)| {
-            alignment_force.direction = other_translations_directions
-                .iter()
-                .filter(|(translation, _)| {
-                    translation.distance_squared(transform.translation)
-                        < boid.vision_distance.powi(2)
-                        && transform
-                            .translation
-                            .normalize()
-                            .dot(translation.normalize())
-                            > boid.vision_dot
-                })
+            let other_translations_directions_filter =
+                other_translations_directions
+                    .iter()
+                    .filter(|(translation, _)| {
+                        translation.distance_squared(transform.translation)
+                            < boid.vision_distance.powi(2)
+                            && transform
+                                .translation
+                                .normalize()
+                                .dot(translation.normalize())
+                                > boid.vision_dot
+                    });
+
+            if other_translations_directions_filter.clone().count() < 1 {
+                return;
+            }
+
+            alignment_force.direction = other_translations_directions_filter
                 .fold(Vec3::ZERO, |acc, (_, direction)| acc + *direction)
-                .try_normalize()
-                .unwrap_or_else(|| Vec3::splat(1.0));
+                .normalize();
         },
     );
-
-    /*
-    for (transform, mut alignment_force, _) in boid_query.iter_mut() {
-        alignment_force.0 = other_translations_directions
-            .iter()
-            .filter(|(translation, _)| translation.distance_squared(transform.translation) < VISION_RADIUS * VISION_RADIUS)
-            .fold(Vec3::ZERO, |acc, (_, direction)| acc + *direction)
-            .try_normalize()
-            .unwrap_or_else(||Vec3::splat(1.0));
-    }*/
 }
 
 fn calculate_cohesion_force(
@@ -311,35 +306,35 @@ fn calculate_cohesion_force(
         &pool,
         BATCH_SIZE,
         |(transform, mut cohesion_force, boid)| {
-            cohesion_force.direction = other_translations
-                .iter()
-                .filter(|translation| {
-                    transform
+            let other_translations_filter = other_translations.iter().filter(|translation| {
+                translation.distance_squared(transform.translation) < boid.vision_distance.powi(2)
+                    && transform
                         .translation
                         .normalize()
                         .dot(translation.normalize())
                         > boid.vision_dot
-                })
-                .fold(Vec3::ZERO, |acc, translation| {
-                    let direction = *translation - transform.translation;
+            });
 
-                    acc + direction * boid.vision_distance * direction.length()
-                })
-                .normalize();
+            let other_translations_count = other_translations_filter.clone().count();
+
+            if other_translations_count < 1 {
+                return;
+            }
+
+            let new_direction =
+                other_translations_filter.fold(Vec3::ZERO, |acc, translation| acc + *translation);
+
+            let new_direction =
+                new_direction / other_translations_count as f32 - transform.translation;
+
+            let new_direction = new_direction.normalize();
+
+            cohesion_force.direction = match new_direction.is_nan() {
+                true => cohesion_force.direction,
+                false => new_direction,
+            }
         },
     );
-
-    /*
-    for (transform, mut cohesion_force) in boid_query.iter_mut() {
-        cohesion_force.0 = other_translations
-            .iter()
-            .fold(Vec3::ZERO, |acc, translation| {
-                let direction = *translation - transform.translation;
-
-                acc + direction * VISION_RADIUS * direction.length()
-            })
-            .normalize();
-    }*/
 }
 
 fn move_boids(
@@ -355,9 +350,13 @@ fn move_boids(
     for (mut transform, mut boid, separation_force, alignment_force, cohesion_force) in
         boid_query.iter_mut()
     {
-        let force_sum = separation_force.direction; // + alignment_force.direction + cohesion_force.direction;
+        let separation_force = separation_force.direction * separation_force.magnitude;
+        let alignment_force = alignment_force.direction * alignment_force.magnitude;
+        let cohesion_force = cohesion_force.direction * cohesion_force.magnitude;
+        let collective_force = separation_force + alignment_force + cohesion_force;
 
-        let target_direction = force_sum.normalize();
+        let target_direction = collective_force.normalize();
+
         let target_rotation = Quat::from_rotation_arc(Vec3::Y, target_direction);
 
         // There are two ways that we can rotate to a new direction,
